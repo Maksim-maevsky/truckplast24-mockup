@@ -164,6 +164,9 @@ th{text-align:left;font-size:12px;font-weight:600;color:var(--muted);letter-spac
 td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:top}
 td.r,th.r{text-align:right}
 .ph{display:block;width:100%;height:auto;aspect-ratio:1;max-width:100%;border-radius:8px}
+img.ph.photo{object-fit:cover;background:var(--surface-2)}
+img.ph.photo.main{object-fit:contain;background:#fff;border:1px solid var(--line)}
+.thumb{border:0;padding:0;background:none;cursor:pointer;border-radius:8px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:500;z-index:50;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
 
 /* ── home ── */
@@ -497,6 +500,8 @@ const RAW = [
 {"a": "TPL4217005", "n": "Каркас кабины FAW JH6 белый", "b": "Truckplast", "ag": "41688b7f", "ko": 484000, "ko1": 462000, "ko2": 440000, "svh": 1, "orig": 0, "bu": 0}
 ];
 
+// Реальные фото позиций (с сайтов truck-seat.ru / kabiny24.ru, те же файлы, что синк берёт из 1С)
+const IMG = {"TPL3816013": ["img/TPL3816013.jpg", "img/TPL3816013-2.jpg", "img/TPL3816013-3.jpg"], "TPL3816017": ["img/TPL3816017.jpg", "img/TPL3816017-2.jpg", "img/TPL3816017-3.jpg"], "TPL3816005": ["img/TPL3816005.jpg", "img/TPL3816005-2.jpg", "img/TPL3816005-3.jpg"], "TPL3816022": ["img/TPL3816022.jpg", "img/TPL3816022-2.jpg", "img/TPL3816022-3.jpg"], "TPL3816029": ["img/TPL3816029.jpg", "img/TPL3816029-2.jpg", "img/TPL3816029-3.jpg"], "TPL4517001": ["img/TPL4517001.jpg", "img/TPL4517001-2.jpg", "img/TPL4517001-3.jpg"], "TPL4417004": ["img/TPL4417004.jpg", "img/TPL4417004-2.jpg", "img/TPL4417004-3.jpg"], "TPL4117001": ["img/TPL4117001.jpg", "img/TPL4117001-2.jpg", "img/TPL4117001-3.jpg"], "TPL4317001": ["img/TPL4317001.jpg", "img/TPL4317001-2.jpg", "img/TPL4317001-3.jpg"], "TPL4217005": ["img/TPL4217005.jpg", "img/TPL4217005-2.jpg", "img/TPL4217005-3.jpg"]};
 const WH = { orig: "Оригинал Михнево", svh: "Михнево СВХ", bu: "БУ МИХНЕВО" };
 const WH_SHORT = { orig: "Оригинал", svh: "Михнево СВХ", bu: "Б/у склад" };
 // Марки грузовиков: словарь алиасов по наименованию (как в синке кабин). Количество — по всем 1 790 позициям в наличии на 23.09.2026.
@@ -525,7 +530,8 @@ const rub = n => Math.round(n).toLocaleString("ru-RU") + " ₽";
 
 const ITEMS = RAW.map(x => {
   const n = x.n.replace(/\\/g, "/");
-  const it = { ...x, n, key: norm(x.a), isBu: x.bu > 0 };
+  const it = { ...x, n, key: norm(x.a), isBu: x.bu > 0, imgs: IMG[x.a] || [] };
+  it.image = it.imgs[0] || null;
   it.free = x.svh + x.orig + x.bu;
   it.marks = MARKS.filter(m => m[2].test(" " + n + " ")).map(m => m[0]);
   if (/howo|shaanxi/i.test(n) && !it.marks.includes("HOWO")) it.marks.push("HOWO");
@@ -564,7 +570,8 @@ function stockHtml(it) {
   if (it.bu > 0) p.push(`<span class="stk bu"><i></i>Б/у склад: <b>${it.bu}</b></span>`);
   return `<div class="stks">${p.join("")}</div>`;
 }
-function ph(it, label) {
+function ph(it, label, eager) {
+  if (it && it.image) return `<img class="ph photo" src="${it.image}" alt="${esc(it.n)}" width="400" height="400" ${eager ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async">`;
   const bu = it && it.isBu;
   const txt = label || (bu ? "реальное фото" : "фото товара");
   const a = it ? esc(it.a) : "";
@@ -773,8 +780,8 @@ function product() {
   const wtxt = it.isBu ? "по фото и описанию" : "12 мес. / по гарантии производителя";
   return `<div class="crumbs"><a data-go="home">Главная</a><span class="sep">/</span>${it.isBu ? `<a data-go="bu">Б/у запчасти</a>` : `<a data-go="catalog" data-reset="1">Каталог</a>`}<span class="sep">/</span><a data-node="${it.node}">${it.node}</a>${it.marks[0] ? `<span class="sep">/</span><a data-mark="${it.marks[0]}">${it.marks[0]}</a>` : ""}</div>
     <div class="pd">
-      <div class="gal">${ph(it)}<div class="thumbs">${[0, 1, 2].map(i => `<svg class="ph ${i ? "" : "on"}" viewBox="0 0 64 64"><rect width="64" height="64" fill="var(--surface-2)"/><circle cx="32" cy="30" r="10" fill="none" stroke="var(--faint)" stroke-width="2"/><text x="32" y="56" text-anchor="middle" font-size="9" fill="var(--faint)" font-family="IBM Plex Sans">фото ${i + 1}</text></svg>`).join("")}</div>
-        <p class="small muted" style="margin:0">Фото из 1С (регистр «Есть фото на сервере»), WebP 400/800/1200. Нет фото — заглушка с артикулом.</p></div>
+      <div class="gal">${it.imgs.length ? `<img class="ph photo main" id="galMain" src="${it.imgs[Math.min(S.gal || 0, it.imgs.length - 1)]}" alt="${esc(it.n)}" width="800" height="800" fetchpriority="high">` : ph(it)}<div class="thumbs">${it.imgs.length ? it.imgs.map((u, i) => `<button type="button" class="thumb" data-gal="${i}" aria-label="Фото ${i + 1}"><img class="ph photo ${i === (S.gal || 0) ? "on" : ""}" src="${u}" alt="" width="64" height="64" loading="lazy"></button>`).join("") : [0, 1, 2].map(i => `<svg class="ph ${i ? "" : "on"}" viewBox="0 0 64 64"><rect width="64" height="64" fill="var(--surface-2)"/><circle cx="32" cy="30" r="10" fill="none" stroke="var(--faint)" stroke-width="2"/><text x="32" y="56" text-anchor="middle" font-size="9" fill="var(--faint)" font-family="IBM Plex Sans">фото ${i + 1}</text></svg>`).join("")}</div>
+        <p class="small muted" style="margin:0">${it.imgs.length ? "Реальные фото из 1С (как на сайтах сидений и кабин)." : "Фото из 1С (регистр «Есть фото на сервере»), WebP 400/800/1200. Нет фото — заглушка с артикулом."}</p></div>
       <div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><span class="pill mute">${esc(it.b)}</span>${it.isBu ? '<span class="pill bu">Б/у</span>' : '<span class="pill ok">В наличии</span>'}</div>
         <div class="artbig">${esc(it.a)}</div>
@@ -998,6 +1005,8 @@ document.getElementById("mRole").addEventListener("click", e => { const b = e.ta
 window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (VIEWS[h] && h !== S.screen) go(h); });
 
 document.addEventListener("click", e => {
+  const gb = e.target.closest("[data-gal]");
+  if (gb) { S.gal = +gb.dataset.gal; const it = BY[S.prod]; document.getElementById("galMain").src = it.imgs[S.gal]; document.querySelectorAll(".thumbs img").forEach((im, k) => im.classList.toggle("on", k === S.gal)); return; }
   const cb = e.target.closest("[data-car]");
   if (cb) { const v = cb.dataset.car; carGo(v === "next" ? CAR.i + 1 : v === "prev" ? CAR.i - 1 : +v); return; }
   const mn = e.target.closest("[data-mark-node]");
@@ -1009,7 +1018,7 @@ document.addEventListener("click", e => {
   const d = t.dataset;
   if (d.roleSet) { S.role = d.roleSet; render(true); return; }
   if (d.go) { if (d.reset) S.f = { brands: [], wh: "all", mark: "", node: "", sort: "stock" }; if (d.go === "checkout") S.co.done = false; if (d.go === "bu" || d.go === "catalog") S.f.brands = []; go(d.go); return; }
-  if (d.prod && !d.act) { S.prod = d.prod; go("product"); return; }
+  if (d.prod && !d.act) { S.prod = d.prod; S.gal = 0; go("product"); return; }
   if (d.q) { S.q = d.q; go("search"); return; }
   if (d.mark) { S.f = { brands: [], wh: "all", mark: d.mark, node: "", sort: "stock" }; go("catalog"); return; }
   if (d.node) { S.f = { brands: [], wh: "all", mark: "", node: d.node, sort: "stock" }; go("catalog"); return; }
