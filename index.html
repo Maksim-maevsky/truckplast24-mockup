@@ -164,8 +164,12 @@ th{text-align:left;font-size:12px;font-weight:600;color:var(--muted);letter-spac
 td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:top}
 td.r,th.r{text-align:right}
 .ph{display:block;width:100%;height:auto;aspect-ratio:1;max-width:100%;border-radius:8px}
-img.ph.photo{object-fit:cover;background:var(--surface-2)}
-img.ph.photo.main{object-fit:contain;background:#fff;border:1px solid var(--line)}
+img.ph.photo{object-fit:contain;background:var(--surface);padding:6px;box-sizing:border-box}
+img.ph.photo.main{padding:14px;border:1px solid var(--line)}
+.thumbs img.ph.photo{padding:3px}
+.featblock img.ph.photo{background:var(--bg)}
+.featblock .bucard{background:var(--bg)}
+.featblock .bucard img.ph.photo{background:var(--surface)}
 .thumb{border:0;padding:0;background:none;cursor:pointer;border-radius:8px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:500;z-index:50;box-shadow:var(--shadow);max-width:calc(100% - 32px)}
 
